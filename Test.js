@@ -4,5 +4,5 @@ var floor2 = {id:"Floor 2",level:1};
 
 var elevator = new SimulationContext.Elevator("1", [floor1,floor2], floor1.level);
 
-elevator.tick();
-elevator.tick();
+//elevator.tick();
+//elevator.tick();

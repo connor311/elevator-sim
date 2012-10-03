@@ -71,9 +71,9 @@
 		
 		that.requestFloor = function(level,direction){
 			if(direction === undefined){
-				m.addAction(m.ACTION_NAME.InternalFloorRequest,{leve:level});
+				m.addAction(m.ACTION_NAMES.InternalFloorRequest,{level:level});
 			}else{
-				m.addAction(m.ACTION_NAME.ExternalFloorRequest,{level:level,direction:direction});
+				m.addAction(m.ACTION_NAMES.ExternalFloorRequest,{level:level,direction:direction});
 			}
 		};
 		
@@ -88,12 +88,12 @@
 		}; // end of tick
 		
 		processFloors(_floors,_startLevel);
-		m.state = new SimulationContext.Elevator.StartState(m);
+		m.state = new SimulationContext.ElevatorStates.StartState(m);
 		
 		return that; // return collection of public methods and properties
 	};
-	if(SimulationContext.Elevator.StartState === undefined){
-		SimulationContext.Elevator.StartState = function(m){
+	if(SimulationContext.ElevatorStates.StartState === undefined){
+		SimulationContext.ElevatorStates.StartState = function(m){
 			var that = {};
 			
 			that.tick = function(){
