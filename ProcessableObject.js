@@ -6,17 +6,21 @@
 
 ;(function(SimulationContext, $, undefined){
 	SimulationContext.ProcessableObject = function(){
-		return {
-			tick: function(){
+		var that = {};
+		
+		that.tick = function(){
 				// just remove
 				// if implementor forgets to implement
 				// don't want bad object in process
-				this.remove();
-			},
-			removed: false,
-			remove: function(){
-				this.removed = true;
-			}
-		};
+				that.remove();
+		}; // end of tick
+		
+		that.removed = false;
+		
+		that.remove = function(){
+				that.removed = true;
+		}; // end of remove
+		
+		return that;
 	};
 })(window.SimulationContext,jQuery);
