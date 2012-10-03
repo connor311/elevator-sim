@@ -9,7 +9,8 @@
 		var shouldWait = _waitTime !== undefined, // if wait fn should be used
 			waitTimeout = null, // timeout id holder for waitFn
 			nextFn = null, // the next function to run on tick
-			ticks = 0; // number of ticks since start or reset
+			ticks = 0, // number of ticks since start or reset
+			running = false;
 		
 		var tickFn = function(){
 			_onTick();
@@ -41,15 +42,21 @@
 		}; // end of initFn
 		
 		var startFn = function(){
-			initFn();
-			nextFn(tickFn); // kick off simulation
+			if(!running){
+				running = true;
+				initFn();
+				nextFn(tickFn); // kick off simulation
+			}
 		}; // end of startFn
 		
 		var stopFn = function(){
-			if(shouldWait && waitTimeout !== null){
-				clearTimeout(waitTimeout);
+			if(running){
+				if(shouldWait && waitTimeout !== null){
+					clearTimeout(waitTimeout);
+				}
+				nextFn = function(){};
+				running = false;
 			}
-			nextFn = function(){};
 		}; // end of stopFn
 		
 		return {
