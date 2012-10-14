@@ -27,9 +27,7 @@
 		that.processAction = function(action){switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
-					break;
-				case m.ACTION_NAMES.ExternalFloorRequest:
-					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
+					m.addFloorRequest(action.param.level,action.param.direction);
 					break;
 				default:
 					m.logger.log("badAction", action);
@@ -64,21 +62,13 @@
 	var stoppedState  = SimulationContext.ElevatorStates.stoppedState = function(m){
 		var that = new baseState(m,"StoppedState", stoppedState),
 			superProcessAction = that.processAction;
-		
-		var checkFloor = function(action){
-			if(that.isCurrentFloor(action.param.level)){
-				that.setNextState(openingDoorState);
-			}else{
-				superProcessAction(action);
-			}
-		};
 			
 		that.processAction = function(action){
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
-					checkFloor(action);
+					if(that.isCurrentFloor(action.param.level)){that.setNextState(openingDoorState);}
+					else{superProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
@@ -99,7 +89,7 @@
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
+					if(!that.isCurrentFloor(action.param.level)){superProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
@@ -129,7 +119,8 @@
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
+					if(that.isCurrentFloor(action.param.level)){that.setNextState(openDoorState, wait+3);}
+					else{superProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
@@ -150,7 +141,8 @@
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					m.logger.log("FloorRequest", [action.param.level,m.Direction.toString(action.param.direction)]);
+					if(that.isCurrentFloor(action.param.level)){that.setNextState(openingDoorState);}
+					else{superProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 

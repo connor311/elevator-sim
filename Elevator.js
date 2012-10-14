@@ -26,7 +26,24 @@
 			m.ACTION_NAMES = {
 				InternalFloorRequest:0,
 				ExternalFloorRequest:1,
-			};
+			}; // end of ACTION_NAMES
+			m.getFloor = function(level){
+				var len = m.floors ? m.gfloors.length : 0;
+				for(var i = 0; i<len; i++){
+					var f = m.floors[i];
+					if(f.level == level){
+						return f;
+					}
+				}
+				return undefined;
+			}; // end of getFloor
+			m.addFloorRequest = function(level,direction){
+				var f = m.getFloor(level);
+				if(f !== undefined){
+					f.addRequest(direction);
+				}
+			}; // end of addFloorRequest
+			
 			
 		var processFloors = function(floors, startLevel){
 			var len = floors ? floors.length : 0;
@@ -42,7 +59,28 @@
 							if(dir === m.Direction.Up) return this.up;
 							if(dir == m.Direction.Down) return this.down;
 							return this;
-						} // end of next
+						}, // end of next
+						requests:{
+							up:false,
+							down:false,
+							stop:false
+						}, // end of requests
+						addRequest: function(direction){
+							if(direction === m.Direction.Up){this.requests.up = true;}
+							else if(direction === m.Direction.Down){this.requests.down = true;}
+							else {this.requests.stop = true;}
+						}, // end of addRequest
+						hasRequest: function(direction){
+							if(this.requests.stop){return true;}
+							if(direction === m.Direction.Up && this.requests.up){return true;}
+							if(direction === m.Direction.Down && this.requests.down){return true;}
+							return false;
+						}, // end of hasRequests
+						processRequest: function(direction){
+							this.requests.stop = false;
+							if(direction === m.Direction.Up){this.requests.up = false;}
+							if(direction === m.Direction.Down){this.requests.down = false;}
+						}, // end of processRequest
 					}; // end of floor creation
 				
 				if(f.level === startLevel){
