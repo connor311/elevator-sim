@@ -28,7 +28,7 @@
 				ExternalFloorRequest:1,
 			}; // end of ACTION_NAMES
 			m.getFloor = function(level){
-				var len = m.floors ? m.gfloors.length : 0;
+				var len = m.floors ? m.floors.length : 0;
 				for(var i = 0; i<len; i++){
 					var f = m.floors[i];
 					if(f.level == level){
@@ -43,6 +43,13 @@
 					f.addRequest(direction);
 				}
 			}; // end of addFloorRequest
+			m.hasFloorRequest = function(level,direction){
+				var f = m.getFloor(level);
+				if(f !== undefined){
+					return f.hasRequest(direction);
+				}
+				return false;
+			}; // end of hasFloorRequest
 			
 			
 		var processFloors = function(floors, startLevel){

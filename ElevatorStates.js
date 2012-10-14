@@ -36,7 +36,6 @@
 		}; // end of processAction
 		
 		that.processActions = function(){
-			m.logger.log("startState", stateName);
 			var a = undefined;
 			
 			while((a=m.nextAction()) !== undefined){
@@ -49,10 +48,12 @@
 		}; // end of isCurrentFloor
 		
 		that.perform = function(){
+			m.logger.log("perfomState", stateName);
 		};
 		
 		that.tick = function(){
 			that.processActions();
+			that.perform();
 			return new that.nextState(m,that.nextStateParams);
 		}; // end of tick
 		
@@ -61,40 +62,37 @@
 	
 	var stoppedState  = SimulationContext.ElevatorStates.stoppedState = function(m){
 		var that = new baseState(m,"StoppedState", stoppedState),
-			superProcessAction = that.processAction;
-			
-		that.processAction = function(action){
-			switch(action.name){
-				case m.ACTION_NAMES.InternalFloorRequest:
-				case m.ACTION_NAMES.ExternalFloorRequest:
-					if(that.isCurrentFloor(action.param.level)){that.setNextState(openingDoorState);}
-					else{superProcessAction(action);}
-					break;
-				default:
-					// If here, I do not 
-					// handle this action in this state
-					superProcessAction(action);
-					break;
+			s={};
+			s.perform=that.perform;
+			s.ProcessAction = that.processAction;
+		
+		that.perform = function(){
+			s.perform();
+			m.direction = m.Direction.Stopped;
+			if(m.hasFloorRequest(m.floor.level)){
+				that.setNextState(openingDoorState);
 			}
-		};
+		}; // end of perform
 		
 		return that;
 	}; // end of stoppedState
 	
-	var openingDoorState  = SimulationContext.ElevatorStates.openingDoorState = function(m){
-		var that = new baseState(m,"openingDoorState", openDoorState),
-			superProcessAction = that.processAction;
+	var openingDoorState  = SimulationContext.ElevatorStates.openingDoorState = function(m,augmentedOpenDoorTime){
+		var that = new baseState(m,"openingDoorState", openDoorState, augmentedOpenDoorTime),
+			s={};
+			s.perform=that.perform;
+			s.ProcessAction = that.processAction;
 			
 		that.processAction = function(action){
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					if(!that.isCurrentFloor(action.param.level)){superProcessAction(action);}
+					if(!that.isCurrentFloor(action.param.level)){s.ProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
 					// handle this action in this state
-					superProcessAction(action);
+					s.ProcessAction(action);
 					break;
 			}
 		};
@@ -103,57 +101,88 @@
 	}; // end of openingDoorState
 	
 	var openDoorState  = SimulationContext.ElevatorStates.openDoorState = function(m, wait){
-		
-		if(wait === undefined){
-			wait = 5; // TODO: pull from elevator
-		}
-		
 		var that = new baseState(m,"openDoorState", openDoorState, wait-1),
-			superProcessAction = that.processAction;
-		
-		if(wait <= 0){
-			that.setNextState(closingDoorState);
-		}
+			holdDoor = false,
+			s={};
+			s.perform=that.perform;
+			s.ProcessAction = that.processAction;
 			
 		that.processAction = function(action){
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					if(that.isCurrentFloor(action.param.level)){that.setNextState(openDoorState, wait+3);}
-					else{superProcessAction(action);}
+					if(that.isCurrentFloor(action.param.level)){holdDoor = true;}
+					else{s.ProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
 					// handle this action in this state
-					superProcessAction(action);
+					s.ProcessAction(action);
 					break;
 			}
 		};
+		
+		that.perform = function(){
+			s.perform();
+			m.getFloor(m.floor.level).processRequest(m.direction);
+			if(wait === undefined){
+				that.setNextState(openDoorState, 4); // TODO: pull from elevator
+			}
+			if(holdDoor){
+				that.setNextState(openDoorState, wait+2);
+			}else if(wait <= 0){
+			that.setNextState(closingDoorState);
+			}
+		}; // end of perform
 		
 		return that;
 	}; // end of openDoorState
 	
 	var closingDoorState = SimulationContext.ElevatorStates.closingDoorState = function(m){
 		var that = new baseState(m,"closingDoorState", stoppedState),
-			superProcessAction = that.processAction;
+			holdDoor = false,
+			s={};
+			s.perform=that.perform;
+			s.ProcessAction = that.processAction;
 			
 		that.processAction = function(action){
 			switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
 				case m.ACTION_NAMES.ExternalFloorRequest:
-					if(that.isCurrentFloor(action.param.level)){that.setNextState(openingDoorState);}
-					else{superProcessAction(action);}
+					if(that.isCurrentFloor(action.param.level)){holdDoor = true;}
+					else{s.ProcessAction(action);}
 					break;
 				default:
 					// If here, I do not 
 					// handle this action in this state
-					superProcessAction(action);
+					s.ProcessAction(action);
 					break;
 			}
 		};
 		
+		that.perform = function(){
+			s.perform();
+			if(holdDoor){
+				that.setNextState(openingDoorState, 2);
+			}
+		}; // end of perform
+		
 		return that;
 	}; // end of closingDoorState
+	
+	var movingState = SimulationContext.ElevatorStates.closingDoorState = function(m){
+		var that = new baseState(m,"movingState", movingState),
+			s={};
+			s.perform=that.perform;
+			s.ProcessAction = that.processAction;
+		
+		that.perform = function(){
+			s.perform();
+			
+		}; // end of perform
+		
+		return that;
+	}; // end of movingState
 	
 	
 	SimulationContext.ElevatorStates.StartState = stoppedState;
