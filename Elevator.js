@@ -50,8 +50,8 @@
 				}
 				return false;
 			}; // end of hasFloorRequest
-			m.nextRequest = function(){
-				var currentDirection = m.direction,
+			m.nextRequest = function(direction){
+				var currentDirection = direction,
 					floorToCheck = undefined;
 					
 				if(currentDirection === m.Direction.Stopped){
@@ -66,6 +66,17 @@
 				var otherDirection = m.Direction.flip(currentDirection);
 				if((floorToCheck = m.floor.next(otherDirection)) !== undefined
 					&& floorToCheck.hasRequest(otherDirection, true)){
+					return otherDirection;
+				}
+				
+				
+				if((floorToCheck = m.floor.next(currentDirection)) !== undefined
+					&& floorToCheck.hasRequest(otherDirection, true, currentDirection)){
+					return currentDirection;
+				}
+				
+				if((floorToCheck = m.floor.next(otherDirection)) !== undefined 
+					&& floorToCheck.hasRequest(currentDirection, true, otherDirection)){
 					return otherDirection;
 				}
 				
@@ -98,15 +109,16 @@
 							else if(direction === m.Direction.Down){this.requests.down = true;}
 							else {this.requests.stop = true;}
 						}, // end of addRequest
-						hasRequest: function(direction,recursive){
+						hasRequest: function(direction,recursive, crawlDirection){
 							if(this.requests.stop){return true;}
 							if(direction === m.Direction.Up && this.requests.up){return true;}
 							if(direction === m.Direction.Down && this.requests.down){return true;}
 							
 							if(recursive){
-								var next = this.next(direction);
+								if(crawlDirection === undefined) crawlDirection = direction;
+								var next = this.next(crawlDirection);
 								if(next !== undefined && next !== this){
-									return next.hasRequest(direction, recursive);
+									return next.hasRequest(direction, recursive, crawlDirection);
 								}
 							}
 							return false;

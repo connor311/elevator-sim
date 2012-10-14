@@ -5,8 +5,12 @@
 */
 
 ;(function(SimulationContext, $, undefined){
-	SimulationContext.Timer = function(_onTick, _waitTime){
-		var shouldWait = _waitTime !== undefined, // if wait fn should be used
+	SimulationContext.Timer = function(_onTick, params){
+		if(params === undefined){
+			params = {};
+		}
+		
+		var shouldWait = params.waitTime !== undefined, // if wait fn should be used
 			waitTimeout = null, // timeout id holder for waitFn
 			nextFn = null, // the next function to run on tick
 			ticks = 0, // number of ticks since start or reset
@@ -22,8 +26,12 @@
 		}; // end of clearTicksfn
 		
 		var noWaitFn = function(tick){
-			tick();
-			nextFn(tick);
+			if(params.endAfter === undefined || ticks <= params.endAfter){
+				tick();
+				nextFn(tick);
+			}else{
+				stopFn();
+			}
 		}; // end of noWaitFn
 		
 		var waitFn = function(time){
@@ -37,7 +45,7 @@
 		
 		
 		var initFn = function(){
-			if(shouldWait) nextFn = waitFn(_waitTime);
+			if(shouldWait) nextFn = waitFn(params.waitTime);
 			else nextFn = noWaitFn;
 		}; // end of initFn
 		
