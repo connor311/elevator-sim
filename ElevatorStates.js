@@ -72,6 +72,9 @@
 			if(m.hasFloorRequest(m.floor.level)){
 				that.setNextState(openingDoorState);
 			}
+			else if(m.nextRequest() !== undefined){
+				that.setNextState(movingState);
+			}
 		}; // end of perform
 		
 		return that;
@@ -165,6 +168,9 @@
 			if(holdDoor){
 				that.setNextState(openingDoorState, 2);
 			}
+			if(m.nextRequest() !== undefined){
+				that.setNextState(movingState);
+			}
 		}; // end of perform
 		
 		return that;
@@ -178,6 +184,17 @@
 		
 		that.perform = function(){
 			s.perform();
+			var movingDirection = m.nextRequest();
+			
+			if(movingDirection === undefined){
+				that.setNextState(stoppedState);
+				return;
+			}
+			
+			m.floor = m.floor.next(movingDirection);
+			if(m.floor.hasRequest()){
+				that.setNextState(openingDoorState);
+			}
 			
 		}; // end of perform
 		

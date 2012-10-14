@@ -50,6 +50,27 @@
 				}
 				return false;
 			}; // end of hasFloorRequest
+			m.nextRequest = function(){
+				var currentDirection = m.direction,
+					floorToCheck = undefined;
+					
+				if(currentDirection === m.Direction.Stopped){
+					currentDirection = m.Direction.Up; // always check up first
+				}
+				
+				if((floorToCheck = m.floor.next(currentDirection)) !== undefined 
+					&& floorToCheck.hasRequest(currentDirection, true)){
+					return currentDirection;
+				}
+				
+				var otherDirection = m.Direction.flip(currentDirection);
+				if((floorToCheck = m.floor.next(otherDirection)) !== undefined
+					&& floorToCheck.hasRequest(otherDirection, true)){
+					return otherDirection;
+				}
+				
+				return undefined;
+			}; // end of nextRequest
 			
 			
 		var processFloors = function(floors, startLevel){
@@ -77,10 +98,17 @@
 							else if(direction === m.Direction.Down){this.requests.down = true;}
 							else {this.requests.stop = true;}
 						}, // end of addRequest
-						hasRequest: function(direction){
+						hasRequest: function(direction,recursive){
 							if(this.requests.stop){return true;}
 							if(direction === m.Direction.Up && this.requests.up){return true;}
 							if(direction === m.Direction.Down && this.requests.down){return true;}
+							
+							if(recursive){
+								var next = this.next(direction);
+								if(next !== undefined && next !== this){
+									return next.hasRequest(direction, recursive);
+								}
+							}
 							return false;
 						}, // end of hasRequests
 						processRequest: function(direction){
@@ -106,6 +134,7 @@
 				m.floors[i].down = last;
 				if(last !== undefined) last.up = m.floors[i];
 				m.logger.log("registered", m.floors[i].id);
+				last = m.floors[i];
 			} // end of linked list for loop
 		}; // end of processFloors
 		
