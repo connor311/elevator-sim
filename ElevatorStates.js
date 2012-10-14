@@ -8,12 +8,21 @@
 
 	SimulationContext.ElevatorStates = {};
 	
-	var baseState  = SimulationContext.ElevatorStates. baseState = function(m, stateName){
+	var baseState  = SimulationContext.ElevatorStates. baseState = function(m, stateName, defaultNextState, defaultNextStateParams){
 		var that = {};
 		
 		that.stateName = stateName;
 		
-		that.nextState = undefined;
+		that.nextState = defaultNextState;
+		that.nextStateParams = defaultNextStateParams;
+		
+		that.setNextState = function(_nextState, params){
+			that.nextState = _nextState;
+			that.nextStateParams = params;
+		};
+		that.getNextState = function(){
+			return new that.nextState(m, that.nextStateParams);
+		};
 		
 		that.processAction = function(action){switch(action.name){
 				case m.ACTION_NAMES.InternalFloorRequest:
@@ -41,18 +50,24 @@
 			return level === m.floor.level;
 		}; // end of isCurrentFloor
 		
+		that.perform = function(){
+		};
+		
+		that.tick = function(){
+			that.processActions();
+			return new that.nextState(m,that.nextStateParams);
+		}; // end of tick
+		
 		return that;
 	}; // end of baseState
 	
 	var stoppedState  = SimulationContext.ElevatorStates.stoppedState = function(m){
-		var that = new baseState(m,"StoppedState"),
+		var that = new baseState(m,"StoppedState", stoppedState),
 			superProcessAction = that.processAction;
-
-		that.nextState = function() { return new stoppedState(m); } ;
 		
 		var checkFloor = function(action){
 			if(that.isCurrentFloor(action.param.level)){
-				that.nextState = function() { return new openingDoorState(m); };
+				that.setNextState(openingDoorState);
 			}else{
 				superProcessAction(action);
 			}
@@ -73,19 +88,12 @@
 			}
 		};
 		
-		that.tick = function(){
-			that.processActions();
-			return that.nextState();
-		}; // end of tick
-		
 		return that;
 	}; // end of stoppedState
 	
 	var openingDoorState  = SimulationContext.ElevatorStates.openingDoorState = function(m){
-		var that = new baseState(m,"openingDoorState"),
+		var that = new baseState(m,"openingDoorState", openDoorState),
 			superProcessAction = that.processAction;
-			
-		that.nextState = function() { return new openDoorState(m);};
 			
 		that.processAction = function(action){
 			switch(action.name){
@@ -100,11 +108,6 @@
 					break;
 			}
 		};
-		
-		that.tick = function(){
-			that.processActions();
-			return that.nextState();
-		}; // end of tick
 		
 		return that;
 	}; // end of openingDoorState
@@ -115,13 +118,11 @@
 			wait = 5; // TODO: pull from elevator
 		}
 		
-		var that = new baseState(m,"openDoorState"),
+		var that = new baseState(m,"openDoorState", openDoorState, wait-1),
 			superProcessAction = that.processAction;
 		
-		if(wait > 0){
-			that.nextState = function() { return new openDoorState(m, wait-1);};
-		}else{
-			that.nextState = function() { return new closingDoorState(m);};
+		if(wait <= 0){
+			that.setNextState(closingDoorState);
 		}
 			
 		that.processAction = function(action){
@@ -138,19 +139,12 @@
 			}
 		};
 		
-		that.tick = function(){
-			that.processActions();
-			return that.nextState();
-		}; // end of tick
-		
 		return that;
 	}; // end of openDoorState
 	
 	var closingDoorState = SimulationContext.ElevatorStates.closingDoorState = function(m){
-		var that = new baseState(m,"closingDoorState"),
+		var that = new baseState(m,"closingDoorState", stoppedState),
 			superProcessAction = that.processAction;
-			
-		that.nextState = function() { return new stoppedState(m);};
 			
 		that.processAction = function(action){
 			switch(action.name){
@@ -165,11 +159,6 @@
 					break;
 			}
 		};
-		
-		that.tick = function(){
-			that.processActions();
-			return that.nextState();
-		}; // end of tick
 		
 		return that;
 	}; // end of closingDoorState
